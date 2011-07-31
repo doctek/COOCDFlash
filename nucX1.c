@@ -18,19 +18,15 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-// Inspiration taken from FM3.c
-// [Credits]
+// This flash driver takes it's inspiration and structure from the stm32x
+//	flash driver in the OpenOCD package.
 // 7/16/11 -- Initial dummy version works - now add functions.  -jkl
 
 #ifdef HAVE_CONFIG_H
-//#include "config.h"
 #include <config.h>
 #endif
 
 #include "imp.h"
-//#include <helper/binarybuffer.h>
-//#include <target/algorithm.h>
-//#include <target/armv7m.h>
 
 /* nucX1 register locations */
 #define NUCX1_SYS_BASE		0x50000000
@@ -64,7 +60,7 @@
 #define ISPCMD_FCTRL		(0x2)
 //#define ISPCMD_FCEN		(1 << 4)
 #define ISPCMD_FOEN		(1 << 5)
-// The above three terms combine to to make the erase command
+// The above three terms combine to make the erase command
 #define ISPCMD_ERASE		(ISPCMD_FCTRL |  ISPCMD_FOEN)
 
 #define ISPTRG_ISPGO		(1 << 0)
@@ -76,38 +72,14 @@
 #define KEY3			0x88
 #define LOCK			0x00
 
-/*	May not need this
-struct nucX1_options
-{
-	uint16_t RDP;
-	uint16_t user_options;
-	uint16_t protection[4];
-};
-*/
+// Private bank information for nucX1.
 struct nucX1_flash_bank
 {
-	struct working_area *write_algorithm;
-	//int variant;
+	struct working_area *write_algorithm;	// this will be used later
 	int probed;
 };
-/*  For reference 
-struct stm32x_flash_bank
-{
-	struct stm32x_options option_bytes;
-	struct working_area *write_algorithm;
-	int ppage_size;
-	int probed;
 
-	bool has_dual_banks;
-	//used to access dual flash bank stm32xl
-	// 0x00 will address bank 0 flash
-	// 0x40 will address bank 1 flash 
-	int register_offset;
-};
-*/
-
-static int nucX1_mass_erase(struct flash_bank *bank);
-
+// This is the function called in the config file.
 FLASH_BANK_COMMAND_HANDLER(nucX1_flash_bank_command)
 {
 	struct nucX1_flash_bank *nucX1_info;
@@ -117,17 +89,9 @@ FLASH_BANK_COMMAND_HANDLER(nucX1_flash_bank_command)
 		LOG_WARNING("incomplete flash_bank nucX1 configuration");
 		return ERROR_FLASH_BANK_INVALID;
 	}
-
-	//Don't need next line, but ??
-	//LOG_INFO("***** FLASH CMD Parameter %s", CMD_ARGV[6]);
 	
 	nucX1_info = malloc(sizeof(struct nucX1_flash_bank));
 	bank->driver_priv = nucX1_info;
-
-	
-	  //nucX1_info->variant = 120;
-	 // LOG_INFO("Novoton NUC: FLASH variant: %s", CMD_ARGV[6]);
-	
 
 	nucX1_info->write_algorithm = NULL;
 	nucX1_info->probed = 0;
@@ -135,6 +99,7 @@ FLASH_BANK_COMMAND_HANDLER(nucX1_flash_bank_command)
 	return ERROR_OK;
 }
 
+// Protection checking - examines the lock bit.
 static int nucX1_protect_check(struct flash_bank *bank)
 {
 	struct target *target = bank->target;
@@ -167,7 +132,7 @@ static int nucX1_protect_check(struct flash_bank *bank)
 	return ERROR_OK;
 }
 
-
+// The erase routine - active development is here.
 static int nucX1_erase(struct flash_bank *bank, int first, int last)
 {
 	struct target *target = bank->target;
@@ -182,12 +147,6 @@ static int nucX1_erase(struct flash_bank *bank, int first, int last)
 	}
 
 	LOG_INFO("NucX1: Sector Erase begins.");
-/*	Nuc can't do mass erase
-	if ((first == 0) && (last == (bank->num_sectors - 1)))
-	{
-		return stm32x_mass_erase(bank);
-	}
-*/
 
 	// Check to see if Nuc is unlocked or not
 	int retval = target_read_u32(target, NUCX1_SYS_WRPROT, &protected);
@@ -318,70 +277,19 @@ static int nucX1_erase(struct flash_bank *bank, int first, int last)
 	return ERROR_OK;
 }
 
+// The write routine stub.
 static int nucX1_write_block(struct flash_bank *bank, uint8_t *buffer, uint32_t offset, uint32_t count)
 {
-	//struct nucX1_flash_bank *nucX1_info = bank->driver_priv;
-	//struct target *target = bank->target;
-	//uint32_t buffer_size = 2048;			// don't know what this shud be yet
-	//struct working_area *source;
-	//uint32_t address = bank->base + offset;
+
 	int retval = ERROR_OK;
-     
-    //uint8_t nucX1_flash_write_code[] = { 0xff };
 
 	LOG_INFO("Novoton NUC: FLASH Write ...");
 
-	/* disable HW watchdog */
-	//target_write_u32(target, 0x40011C00, 0x1ACCE551);
-	
-    count = count / 2; 		// number bytes -> number halfwords
 
-	/* check code alignment */
-	if (offset & 0x1)
-	{
-		LOG_WARNING("offset 0x%" PRIx32 " breaks required 2-byte alignment", offset);
-		return ERROR_FLASH_DST_BREAKS_ALIGNMENT;
-	}
-#if 0
-	/* allocate working area with flash programming code */
-	if (target_alloc_working_area(target, sizeof(nucX1_flash_write_code), &nucX1_info->write_algorithm) != ERROR_OK)
-	{
-		LOG_WARNING("no working area available, can't do block memory writes");
-		return ERROR_TARGET_RESOURCE_NOT_AVAILABLE;
-	}
-
-	/* write flash programming code to nucX1's RAM */
-	if ((retval = target_write_buffer(target, nucX1_info->write_algorithm->address, sizeof(nucX1_flash_write_code), nucX1_flash_write_code)) != ERROR_OK)
-		return retval;
-
-	/* memory buffer */
-	while (target_alloc_working_area(target, buffer_size, &source) != ERROR_OK)
-	{
-		buffer_size /= 2;
-		if (buffer_size <= 256)
-		{
-			/* free working area, if write algorithm already allocated */
-			if (nucX1_info->write_algorithm)
-			{
-				target_free_working_area(target, nucX1_info->write_algorithm);
-			}
-			
-			LOG_WARNING("no large enough working area available, can't do block memory writes");
-			return ERROR_TARGET_RESOURCE_NOT_AVAILABLE;
-		}	
-	}
-
-	//init_reg_param(&reg_params[0], "r0", 32, PARAM_OUT); // source start address
-
-
-	//target_free_working_area(target, source);
-	//target_free_working_area(target, nucX1_info->write_algorithm);
-
-	//destroy_reg_param(&reg_params[0]);
-#endif
 	return retval;
 }
 
+// The probe routine for the nuc. Only recognizes the nuc120 right now.
 static int nucX1_probe(struct flash_bank *bank)
 {
 	struct target *target = bank->target;
@@ -407,18 +315,6 @@ static int nucX1_probe(struct flash_bank *bank)
 		return retval;
 	LOG_INFO("device id = 0x%08" PRIx32 "", device_id);
 
-	/* get flash size from target. */
-	// not sure about this??
-/*
-	retval = target_read_u16(target, 0x1FFFF7E0, &num_pages);
-	if (retval != ERROR_OK)
-	{
-		LOG_WARNING("failed reading flash size, default to max target family");
-		//failed reading flash size, default to max target family 
-		num_pages = 0xffff;
-	}
-*/
-
 	if ((device_id ) == 0x00012000)
 	{
 		/* medium density - we have 1k pages
@@ -443,11 +339,6 @@ static int nucX1_probe(struct flash_bank *bank)
 		LOG_WARNING("Cannot identify target as a nuc family.");
 		return ERROR_FAIL;
 	}
-
-	//LOG_INFO("flash size = %dkbytes", num_pages);
-
-	/* calculate numbers of pages */
-	//num_pages /= (page_size / 1024);
 
 	if (bank->sectors)
 	{
@@ -498,32 +389,22 @@ static int nucX1_info(struct flash_bank *bank, char *buf, int buf_size)
 
 	if ((device_id) == 0x00012000)
 	{
-		//printed = snprintf(buf, buf_size, "nuc120USB (Medium Density) - Rev: ");
-		//printed = snprintf(buf, buf_size, "nuc120USB (Medium Density)");
 		LOG_INFO("nuc120USB (Medium Density)");
-		//buf += printed;
-		//buf_size -= printed;
-		// need to read another register to get the rev
-
-		//switch (device_id >> 16)
-		//{
-		//	case 0x0000:
 	}
 	else if ((device_id) != 0x00000000)
 	{
-		printed = snprintf(buf, buf_size, "nuc device likely - add to driver");
-
+		LOG_INFO("nuc device likely - add to driver");
 	}
 	
 	else
 	{
-		snprintf(buf, buf_size, "Cannot identify target as a nuc1xx\n");
+		LOG_INFO("Cannot identify target as a nuc1xx");
 		return ERROR_FAIL;
 	}
 
 	return ERROR_OK;
 }
-
+/*
 static int nucX1_mass_erase(struct flash_bank *bank)
 {
 	struct target *target = bank->target;
@@ -562,7 +443,7 @@ COMMAND_HANDLER(nucX1_handle_mass_erase_command)
 	retval = nucX1_mass_erase(bank);
 	if (retval == ERROR_OK)
 	{
-		/* set all sectors as erased */
+		// set all sectors as erased 
 		for (i = 0; i < bank->num_sectors; i++)
 		{
 			bank->sectors[i].is_erased = 1;
@@ -599,11 +480,12 @@ static const struct command_registration nucX1_command_handlers[] = {
 	},
 	COMMAND_REGISTRATION_DONE
 };
-
+*/
 // Probably need to add the protect and protect_check routines
 struct flash_driver nucX1_flash = {
 	.name = "nucX1",
-	.commands = nucX1_command_handlers,
+	//.commands = nucX1_command_handlers,
+	.commands = NULL,
 	.flash_bank_command = nucX1_flash_bank_command,
 	.erase = nucX1_erase,
 	.write = nucX1_write_block,
