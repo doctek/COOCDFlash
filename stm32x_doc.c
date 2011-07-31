@@ -1713,7 +1713,7 @@ static const struct command_registration stm32x_command_handlers[] = {
 // The .commands field is used to add commands to the basic set. These have been collected
 //  in a structure whose name was included in a second structure as described above. The name
 //  of the second structure is placed in this field as shown. If no commands are to be added,
-//  then this become .commands = null.
+//  then this become .commands = NULL.
 // The .flash_bank_command entry points to the function of type FLASH_BANK_COMMAND_HANDLER 
 //  defined near the top of this file. 
 //
