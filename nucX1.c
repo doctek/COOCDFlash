@@ -133,6 +133,7 @@ static int nucX1_protect_check(struct flash_bank *bank)
 }
 
 // The erase routine - active development is here.
+// As of 7/31/11, this does not work. 
 static int nucX1_erase(struct flash_bank *bank, int first, int last)
 {
 	struct target *target = bank->target;
@@ -367,6 +368,8 @@ static int nucX1_probe(struct flash_bank *bank)
 
 	return ERROR_OK;
 }
+
+// Standard approach to autoprobing.
 static int nucX1_auto_probe(struct flash_bank *bank)
 {
 	struct nucX1_flash_bank *nucX1_info = bank->driver_priv;
@@ -375,7 +378,7 @@ static int nucX1_auto_probe(struct flash_bank *bank)
 	return nucX1_probe(bank);
 }
 
-
+// Info doesn't really add much, but works correctly.
 static int nucX1_info(struct flash_bank *bank, char *buf, int buf_size)
 {
 	struct target *target = bank->target;
@@ -405,6 +408,9 @@ static int nucX1_info(struct flash_bank *bank, char *buf, int buf_size)
 	return ERROR_OK;
 }
 /*
+// The nuc120 doesn't support mass erase, so this will probably be removed soon.
+// The structure is left for now until I am sure I don't want to add any custom
+//  commands.
 static int nucX1_mass_erase(struct flash_bank *bank)
 {
 	struct target *target = bank->target;
@@ -481,7 +487,7 @@ static const struct command_registration nucX1_command_handlers[] = {
 	COMMAND_REGISTRATION_DONE
 };
 */
-// Probably need to add the protect and protect_check routines
+
 struct flash_driver nucX1_flash = {
 	.name = "nucX1",
 	//.commands = nucX1_command_handlers,
