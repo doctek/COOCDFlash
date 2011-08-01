@@ -1,0 +1,38 @@
+Welcome to COOCDFlash!
+===================
+
+COOCDFlash (pronounced "cooked flash") is created because of my 
+strong liking for OpenOCD and desire to help popularize it.
+
+Specifically, COOCDFlash address the need to add flash drivers to
+OpenOCD in order to support new chips. Since manufacturers have
+little commercial incentive to support OpenOCD, development of
+new flash drivers often lags the new chips. COOCDFlash seeks to
+provide instruction and examples that will guide the creation of
+new flash drivers.
+
+It is important to note that OpenOCD is not for the newbie user of
+OpenOCD. You should be comfortable downloading and installing 
+OpenOCD, and should be able to set up your ARM tool chain to do
+development on a target system. With this level of skill, you will
+find COOCDFlash materials to be useful if you choose to develop a 
+flash driver for a new chip.
+
+What you will find at this site are a couple of flash drivers -
+one is a copy of the existing stm32x driver found in OpenOCD. I have 
+extensively commented it to explain all the necessary and optional
+functions and structures that are necessary in a flash driver. The
+other is an experimental flash driver for a Nuvoton NUC-120 chip. I
+am currently working on the development of this driver and this project
+is mostly a result of what I am learning by way of this development
+effort.
+
+Please understand that I do not consider myself an OpenOCD or flash
+driver expert by any means. I am a serious amateur who is trying to 
+learn and is eager to share what I have learned. Please send your
+comments, suggestions, and questions to help improve this project.
+
+The COPYING file contains a copy of the GPL as used by the OpenOCD
+project. This is the license under which all COOCDFlash material 
+is released. I will only change the license if OpenOCD changes the
+license they use.
