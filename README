@@ -11,7 +11,7 @@ new flash drivers often lags the new chips. COOCDFlash seeks to
 provide instruction and examples that will guide the creation of
 new flash drivers.
 
-It is important to note that OpenOCD is not for the newbie user of
+It is important to note that COOCDFlash is not for the newbie user of
 OpenOCD. You should be comfortable downloading and installing 
 OpenOCD, and should be able to set up your ARM tool chain to do
 development on a target system. With this level of skill, you will
