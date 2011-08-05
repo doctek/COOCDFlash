@@ -18,6 +18,10 @@ development on a target system. With this level of skill, you will
 find COOCDFlash materials to be useful if you choose to develop a 
 flash driver for a new chip.
 
+The Wiki for this site is: https://github.com/doctek/COOCDFlash/wiki
+
+The Source code is here: https://github.com/doctek/COOCDFlash
+
 What you will find at this site are a couple of flash drivers -
 one is a copy of the existing stm32x driver found in OpenOCD. I have 
 extensively commented it to explain all the necessary and optional
